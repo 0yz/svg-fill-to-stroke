@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG to Stroke Converter</title>
+    <style>
+        body {
+            font-family: monospace;
+            color: #121212;
+            min-height: 100vh;
+            background: #f3f3f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0;
+            padding: 5% 0;
+        }
+        body a {
+            padding: 10px 0px;
+        }
+        #svg-container {
+			width:90%;
+            max-width: 800px;
+            height: auto;
+			aspect-ratio: 1 / 1;
+            overflow: auto;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        #download {
+            margin-top: 10px;
+            color: #889988;
+        }
+    </style>
+</head>
+<body>
+    <h1>SVG to Stroke Converter</h1>
+	<p>Useful for making SVGs work with <a href="https://maxwellito.github.io/vivus/" target="_blank">Vivus.js</a></p>
+    <input type="file" id="upload" accept=".svg">
+    <div>
+        <label for="stroke-width">Stroke Width:</label>
+        <input type="number" id="stroke-width" value="2" min="0" max="50" step="0.25">
+    </div>
+    <div>
+        <label for="disable-fill">Disable Fill:</label>
+        <input type="checkbox" id="disable-fill">
+    </div>
+    <a id="download" style="display:none;" href="#">Download SVG</a>
+    <a id="vivus" href="https://maxwellito.github.io/vivus-instant/" target="_blank">Open Vivus Instant</a>
+    <div id="svg-container"></div>
+    <textarea id="output" rows="10" cols="100" style="display:none;"></textarea>
+    <script>
+        let originalSvgDoc = null;
+
+        document.getElementById('upload').addEventListener('change', handleFileSelect, false);
+        document.getElementById('stroke-width').addEventListener('input', updateSvg);
+        document.getElementById('disable-fill').addEventListener('change', updateSvg);
+
+        function handleFileSelect(evt) {
+            const file = evt.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const parser = new DOMParser();
+                originalSvgDoc = parser.parseFromString(e.target.result, "image/svg+xml");
+
+                // Initial rendering
+                updateSvg();
+
+                // Set up download button with original filename + "_outline.svg"
+                const fileName = file.name.replace('.svg', '_outline.svg');
+                const downloadButton = document.getElementById('download');
+                downloadButton.style.display = 'inline-block';
+                downloadButton.download = fileName;
+            };
+            reader.readAsText(file);
+        }
+
+        function updateSvg() {
+            if (!originalSvgDoc) return;
+
+            // Clone the original SVG document to avoid modifying the original
+            const svgDoc = originalSvgDoc.cloneNode(true);
+
+            const strokeWidth = document.getElementById('stroke-width').value;
+            const disableFill = document.getElementById('disable-fill').checked;
+
+            // Remove all styles and stroke-width attributes
+            removeStyles(svgDoc);
+            removeStrokeWidthAttributes(svgDoc);
+
+            // If "Disable Fill" is checked, remove fill attributes
+            if (disableFill) {
+                removeFillAttributes(svgDoc);
+            }
+
+            // Apply stroke attributes to all relevant elements
+            const elements = svgDoc.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
+            elements.forEach(element => {
+                enforceStrokeAttributes(element, strokeWidth);
+            });
+
+            // Convert polygons to polylines
+            const polygons = svgDoc.querySelectorAll('polygon');
+            polygons.forEach(polygon => {
+                const polyline = polygonToPolyline(polygon);
+                if (polyline) {
+                    polygon.parentNode.replaceChild(polyline, polygon);
+                }
+            });
+
+            // Serialize the new SVG
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgDoc.documentElement);
+
+            // Update the SVG preview
+            document.getElementById('svg-container').innerHTML = svgString;
+            document.getElementById('output').value = svgString;
+
+            // Update the download link
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            document.getElementById('download').href = url;
+        }
+
+        function polygonToPolyline(polygon) {
+            const points = polygon.getAttribute("points").trim().split(/\s+/);
+            let d = "";
+            for (let i = 0; i < points.length; i++) {
+                const coordinates = points[i].split(',');
+                if (coordinates.length === 2) {
+                    const [x, y] = coordinates;
+                    d += `${x},${y} `;
+                }
+            }
+
+            if (d.trim() === "") {
+                console.warn('Invalid polyline data generated for polygon:', polygon);
+                return null; // Return null if the polyline data is invalid
+            }
+
+            const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            polyline.setAttribute("points", d.trim());
+            enforceStrokeAttributes(polyline, document.getElementById('stroke-width').value);
+            return polyline;
+        }
+
+        function enforceStrokeAttributes(element, strokeWidth) {
+            element.setAttribute("stroke", "black");
+            element.setAttribute("stroke-width", strokeWidth);
+        }
+
+        function removeStyles(svgDoc) {
+            // Remove all style elements
+            const styleElements = svgDoc.querySelectorAll('style');
+            styleElements.forEach(style => style.remove());
+
+            // Remove all inline styles
+            const styledElements = svgDoc.querySelectorAll('[style]');
+            styledElements.forEach(el => el.removeAttribute('style'));
+        }
+
+        function removeFillAttributes(svgDoc) {
+            // Remove fill attributes from all elements
+            const elements = svgDoc.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, g');
+            elements.forEach(el => el.setAttribute('fill', 'none'));
+        }
+
+        function removeStrokeWidthAttributes(svgDoc) {
+            // Remove stroke-width attributes from all elements
+            const elements = svgDoc.querySelectorAll('[stroke-width], [style*="stroke-width"]');
+            elements.forEach(el => {
+                el.removeAttribute('stroke-width');
+                if (el.hasAttribute('style')) {
+                    el.setAttribute('style', el.getAttribute('style').replace(/stroke-width:\s*[^;]+;?/g, ''));
+                }
+            });
+        }
+    </script>
+	
+<!--made with the loving support of chatgpt-->
+
+</body>
+</html>
