@@ -4,4 +4,4 @@ Useful for making SVGs work with [Vivus.js](https://maxwellito.github.io/vivus/)
 
 **Open app:**
 
-https://0yz.github.io/svg-to-stroke-converter/
+https://0yz.github.io/svg-fill-to-stroke/
