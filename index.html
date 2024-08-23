@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG Fill to Stroke Converter</title>
     <style>
+
         body {
             font-family: monospace;
             color: #121212;
@@ -54,13 +55,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 2px dashed #ccc;
+            border: 2vw dashed #ccc;
             z-index: 10;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            /*! opacity: 0; */
+            /*! transition: opacity 0.3s ease-in-out; */
+            pointer-events:none;
         }
         #drop-zone.active {
             opacity: 1;
+            pointer-events:all
+        }
+        #drop-zone p{
+            font-size:5vw;
+            background:#fff;
+            padding:2vw;
         }
     </style>
 </head>
@@ -82,7 +90,7 @@
     <textarea id="output" rows="10" cols="100" style="display:none;"></textarea>
     
     <!-- Drop Zone -->
-    <div id="drop-zone">Drop your SVG file here</div>
+    <div id="drop-zone"><p>Drop your SVG file here</p></div>
 
     <script>
         let originalSvgDoc = null;
