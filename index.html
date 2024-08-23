@@ -55,11 +55,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 2vw dashed #ccc;
             z-index: 10;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
             pointer-events:none;
+            outline:dashed;
+            outline-offset:1vw;
+            outline-color:#ccc;
+            outline-width:2vw;
         }
         #drop-zone.active {
             opacity: 1;
