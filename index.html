@@ -57,8 +57,8 @@
             align-items: center;
             border: 2vw dashed #ccc;
             z-index: 10;
-            /*! opacity: 0; */
-            /*! transition: opacity 0.3s ease-in-out; */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
             pointer-events:none;
         }
         #drop-zone.active {
@@ -66,9 +66,10 @@
             pointer-events:all
         }
         #drop-zone p{
-            font-size:5vw;
+            font-size:4vw;
             background:#fff;
-            padding:2vw;
+            padding:1vw;
+            border-radius:25px;
         }
     </style>
 </head>
