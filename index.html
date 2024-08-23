@@ -24,7 +24,7 @@
         h1{
             width:100%;
             text-align:center;
-	}
+        }
         #svg-container {
             width:90%;
             max-width: 700px;
@@ -45,11 +45,28 @@
             margin-top: 10px;
             color: #889988;
         }
+        #drop-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #ccc;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #drop-zone.active {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <h1>SVG Fill to Stroke Converter</h1>
-	<p>Useful for making SVGs work with <a href="https://maxwellito.github.io/vivus/" target="_blank">Vivus.js</a></p>
+    <p>Useful for making SVGs work with <a href="https://maxwellito.github.io/vivus/" target="_blank">Vivus.js</a></p>
     <input type="file" id="upload" accept=".svg">
     <div>
         <label for="stroke-width">Stroke Width:</label>
@@ -63,12 +80,43 @@
     <a id="vivus" href="https://maxwellito.github.io/vivus-instant/" target="_blank">Open Vivus Instant</a>
     <div id="svg-container"></div>
     <textarea id="output" rows="10" cols="100" style="display:none;"></textarea>
+    
+    <!-- Drop Zone -->
+    <div id="drop-zone">Drop your SVG file here</div>
+
     <script>
         let originalSvgDoc = null;
 
         document.getElementById('upload').addEventListener('change', handleFileSelect, false);
         document.getElementById('stroke-width').addEventListener('input', updateSvg);
         document.getElementById('disable-fill').addEventListener('change', updateSvg);
+
+        const dropZone = document.getElementById('drop-zone');
+
+        // Handle drag and drop
+        ['dragenter', 'dragover'].forEach(eventName => {
+            document.body.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            document.body.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('active');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('upload').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
 
         function handleFileSelect(evt) {
             const file = evt.target.files[0];
@@ -190,7 +238,7 @@
             });
         }
     </script>
-	
+
 <!--
 made by github.com/0yz with the loving support of chatgpt
 -->
